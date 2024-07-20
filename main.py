@@ -125,7 +125,7 @@ def main():
 
     # Input fields
     patient_name = st.text_input("Name of the patient")
-    date_time = st.date_input("Time and date of consultation")
+    date_time = datetime.now().strftime("%d-%m-%Y")
     phone_number = st.text_input("Contact number")
     email = st.text_input("Email address")
 
