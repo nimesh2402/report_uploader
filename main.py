@@ -93,7 +93,9 @@ def process_report(report_text):
 
     4. The test name cannot be adapted to the above name, then retain the name but give it in all caps 
     5. In the test comments section add the Unit and the normal range and the interpretation comments (Normal etc)
-
+    
+    **IMPORTANT INSTRUCTIONS**
+    If there are no text or reports extracted from the uploaded file, Please don't make up or hallucinate reports. Just give the output as : Data could not be extracted because of some reason
 
     """
 
@@ -128,7 +130,7 @@ def main():
     email = st.text_input("Email address")
 
     # File uploader
-    uploaded_files = st.file_uploader("Upload PDF or image files", type=["pdf", "png", "jpg", "jpeg"],
+    uploaded_files = st.file_uploader("Upload PDF of Reports. Multiple files can be uploaded", type=["pdf"],
                                       accept_multiple_files=True)
 
     if st.button("Submit"):
