@@ -136,16 +136,21 @@ def main():
             st.success("Thank you for uploading the report. Please keep the window open for a few seconds to allow us to process the data")
 
             # Process reports in the background
-            report_text = ""
+            all_csv_outputs = []
             for file in uploaded_files:
+                report_text = ""
                 if file.type == "application/pdf":
-                    report_text += extract_text_from_pdf(file)
+                    report_text = extract_text_from_pdf(file)
                 else:
-                    report_text += extract_text_from_image(file)
+                    report_text = extract_text_from_image(file)
 
-            csv_output = process_report(report_text)
+                csv_output = process_report(report_text)
+                all_csv_outputs.append(csv_output)
 
-            send_to_zapier(patient_name, csv_output)
+            # Combine all CSV outputs
+            combined_csv_output = "\n".join(all_csv_outputs)
+
+            send_to_zapier(patient_name, combined_csv_output)
 
             # Display the CSV output (optional, for debugging)
             # st.text("Generated CSV data:")
