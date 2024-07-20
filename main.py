@@ -133,7 +133,7 @@ def main():
 
     if st.button("Submit"):
         if uploaded_files and patient_name and date_time and phone_number and email:
-            st.success("Thank you for uploading the report. We will process it and get back to you soon.")
+            st.success("Thank you for uploading the report. Please keep the window open for a few seconds to allow us to process the data")
 
             # Process reports in the background
             report_text = ""
@@ -148,8 +148,8 @@ def main():
             send_to_zapier(patient_name, csv_output)
 
             # Display the CSV output (optional, for debugging)
-            st.text("Generated CSV data:")
-            st.text(csv_output)
+            # st.text("Generated CSV data:")
+            # st.text(csv_output)
 
         else:
             st.warning("Please fill in all fields and upload at least one file.")
