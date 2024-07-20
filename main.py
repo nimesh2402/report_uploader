@@ -103,7 +103,7 @@ def process_report(report_text):
 
 def send_to_zapier(patient_name, csv_data):
     st.text("Sending data to Zapier...")
-    zapier_webhook_url = "https://hooks.zapier.com/hooks/catch/7577243/22sxf4r/"
+    zapier_webhook_url = st.secrets["zapier"]["webhook_url"]
 
     # Prepare payload
     payload = {
