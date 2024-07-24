@@ -100,29 +100,37 @@ def process_report(report_text):
     csv_output = claude_request(prompt)
     return csv_output
 
-def upload_to_firebase(patient_name, contact_number, email, file, csv_data):
+def upload_to_firebase(patient_name, contact_number, email, pdf_file, csv_data):
     st.text("Uploading to Firebase...")
     try:
-        # Reset the file pointer to the beginning
-        file.seek(0)
+        # Reset the PDF file pointer to the beginning
+        pdf_file.seek(0)
         
         # Upload PDF to Firebase Storage
-        file_name = f"{patient_name}_{file.name}"
-        blob = bucket.blob(file_name)
-        blob.upload_from_file(file)
+        pdf_file_name = f"{patient_name}_report.pdf"
+        pdf_blob = bucket.blob(pdf_file_name)
+        pdf_blob.upload_from_file(pdf_file)
 
-        # Save patient details and CSV data to Firestore
+        # Create a CSV file in memory
+        csv_file = io.StringIO(csv_data)
+        
+        # Upload CSV to Firebase Storage
+        csv_file_name = f"{patient_name}_data.csv"
+        csv_blob = bucket.blob(csv_file_name)
+        csv_blob.upload_from_file(csv_file, content_type='text/csv')
+
+        # Save patient details and file names to Firestore
         doc_ref = db.collection('patients').document(patient_name)
         doc_ref.set({
             'name': patient_name,
             'contact_number': contact_number,
             'email': email,
             'upload_date': datetime.now(),
-            'file_name': file_name,
-            'csv_data': csv_data
+            'pdf_file_name': pdf_file_name,
+            'csv_file_name': csv_file_name
         })
 
-        st.success(f"Uploaded {file_name} to Firebase successfully!")
+        st.success(f"Uploaded PDF and CSV for {patient_name} to Firebase successfully!")
     except Exception as e:
         st.error(f"Error uploading to Firebase: {str(e)}")
 
