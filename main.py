@@ -111,13 +111,10 @@ def upload_to_firebase(patient_name, contact_number, email, pdf_file, csv_data):
         pdf_blob = bucket.blob(pdf_file_name)
         pdf_blob.upload_from_file(pdf_file)
 
-        # Create a CSV file in memory
-        csv_file = io.StringIO(csv_data)
-        
-        # Upload CSV to Firebase Storage
+        # Upload CSV data as a string
         csv_file_name = f"{patient_name}_data.csv"
         csv_blob = bucket.blob(csv_file_name)
-        csv_blob.upload_from_file(csv_file, content_type='text/csv')
+        csv_blob.upload_from_string(csv_data, content_type='text/csv')
 
         # Save patient details and file names to Firestore
         doc_ref = db.collection('patients').document(patient_name)
@@ -133,6 +130,7 @@ def upload_to_firebase(patient_name, contact_number, email, pdf_file, csv_data):
         st.success(f"Uploaded PDF and CSV for {patient_name} to Firebase successfully!")
     except Exception as e:
         st.error(f"Error uploading to Firebase: {str(e)}")
+        st.error(f"Error details: {type(e).__name__}, {str(e)}")
 
 def main():
     st.title("Dr. Om J Lakhani Report Uploader")
@@ -147,18 +145,18 @@ def main():
 
     if st.button("Submit"):
         if uploaded_file and patient_name and contact_number and email:
-            # Process the uploaded file
-            report_text = extract_text_from_pdf(uploaded_file)
-            csv_output = process_report(report_text)
-            
-            # Upload to Firebase
-            upload_to_firebase(patient_name, contact_number, email, uploaded_file, csv_output)
-            
-            # Display the CSV output (optional, for debugging)
-            st.text("Generated CSV data:")
-            st.text(csv_output)
+            try:
+                # Process the uploaded file
+                report_text = extract_text_from_pdf(uploaded_file)
+                csv_output = process_report(report_text)
+                
+                # Upload to Firebase
+                upload_to_firebase(patient_name, contact_number, email, uploaded_file, csv_output)
+                
+                # Display the CSV output (optional, for debugging)
+                # st.text("Generated CSV data:")
+                # st.text(csv_output)
+            except Exception as e:
+                st.error(f"An error occurred: {str(e)}")
         else:
             st.warning("Please fill in all fields and upload a file.")
-
-if __name__ == "__main__":
-    main()
