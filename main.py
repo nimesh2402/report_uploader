@@ -160,3 +160,6 @@ def main():
                 st.error(f"An error occurred: {str(e)}")
         else:
             st.warning("Please fill in all fields and upload a file.")
+
+if __name__ == "__main__":
+    main()
