@@ -3,3 +3,4 @@ pandas
 requests
 anthropic
 PyPDF2
+firebase_admin
