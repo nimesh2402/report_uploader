@@ -141,7 +141,7 @@ def upload_to_firebase(patient_name, contact_number, email, pdf_files, csv_data)
                 'name': patient_name,
                 'contact_number': contact_number,
                 'email': email,
-                'upload_date': datetime.now(),
+                'upload_date': firestore.SERVER_TIMESTAMP,
                 'pdf_file_names': pdf_file_names,
                 'csv_file_name': csv_file_name
             })
