@@ -107,37 +107,55 @@ def process_report(report_text):
 
 def upload_to_firebase(patient_name, contact_number, email, pdf_files, csv_data):
     st.text("Uploading to Firebase...")
+    pdf_file_names = []
     try:
-        pdf_file_names = []
         for i, pdf_file in enumerate(pdf_files):
-            # Reset the PDF file pointer to the beginning
-            pdf_file.seek(0)
+            try:
+                # Reset the PDF file pointer to the beginning
+                pdf_file.seek(0)
 
-            # Upload PDF to Firebase Storage
-            pdf_file_name = f"{patient_name}_report_{i+1}.pdf"
-            pdf_blob = bucket.blob(pdf_file_name)
-            pdf_blob.upload_from_file(pdf_file)
-            pdf_file_names.append(pdf_file_name)
+                # Upload PDF to Firebase Storage
+                pdf_file_name = f"{patient_name}_report_{i+1}.pdf"
+                pdf_blob = bucket.blob(pdf_file_name)
+                pdf_blob.upload_from_file(pdf_file)
+                pdf_file_names.append(pdf_file_name)
+                st.text(f"Successfully uploaded {pdf_file_name}")
+            except Exception as pdf_error:
+                st.error(f"Error uploading PDF {i+1}: {str(pdf_error)}")
+                st.error(f"PDF error details: {type(pdf_error).__name__}, {str(pdf_error)}")
 
         # Upload CSV data as a string
-        csv_file_name = f"{patient_name}_data.csv"
-        csv_blob = bucket.blob(csv_file_name)
-        csv_blob.upload_from_string(csv_data, content_type='text/csv')
+        try:
+            csv_file_name = f"{patient_name}_data.csv"
+            csv_blob = bucket.blob(csv_file_name)
+            csv_blob.upload_from_string(csv_data, content_type='text/csv')
+            st.text(f"Successfully uploaded {csv_file_name}")
+        except Exception as csv_error:
+            st.error(f"Error uploading CSV: {str(csv_error)}")
+            st.error(f"CSV error details: {type(csv_error).__name__}, {str(csv_error)}")
 
         # Save patient details and file names to Firestore
-        doc_ref = db.collection('patients').document(patient_name)
-        doc_ref.set({
-            'name': patient_name,
-            'contact_number': contact_number,
-            'email': email,
-            'upload_date': datetime.now(),
-            'pdf_file_names': pdf_file_names,
-            'csv_file_name': csv_file_name
-        })
+        try:
+            doc_ref = db.collection('patients').document(patient_name)
+            doc_ref.set({
+                'name': patient_name,
+                'contact_number': contact_number,
+                'email': email,
+                'upload_date': datetime.now(),
+                'pdf_file_names': pdf_file_names,
+                'csv_file_name': csv_file_name
+            })
+            st.text("Successfully saved patient details to Firestore")
+        except Exception as firestore_error:
+            st.error(f"Error saving to Firestore: {str(firestore_error)}")
+            st.error(f"Firestore error details: {type(firestore_error).__name__}, {str(firestore_error)}")
 
-        st.success(f"Uploaded {len(pdf_files)} PDFs and CSV for {patient_name} to Firebase successfully!")
+        if len(pdf_file_names) == len(pdf_files):
+            st.success(f"Uploaded {len(pdf_files)} PDFs and CSV for {patient_name} to Firebase successfully!")
+        else:
+            st.warning(f"Uploaded {len(pdf_file_names)} out of {len(pdf_files)} PDFs and CSV for {patient_name} to Firebase.")
     except Exception as e:
-        st.error(f"Error uploading to Firebase: {str(e)}")
+        st.error(f"Error in upload_to_firebase: {str(e)}")
         st.error(f"Error details: {type(e).__name__}, {str(e)}")
 
 
