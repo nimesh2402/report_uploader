@@ -39,6 +39,7 @@ Key points:
 - Do not include any explanatory text or summaries, only the CSV data.
 """
 
+
 def claude_request(prompt, system=SYSTEM_PROMPT):
     try:
         st.text("Sending request to Claude...")
@@ -67,16 +68,19 @@ def claude_request(prompt, system=SYSTEM_PROMPT):
         st.error(f"An error occurred while calling Claude: {str(e)}")
         return None
 
-def extract_text_from_pdf(pdf_file):
-    st.text("Extracting text from PDF...")
+
+def extract_text_from_pdfs(pdf_files):
+    st.text("Extracting text from PDFs...")
     start_time = time.time()
-    pdf_reader = PyPDF2.PdfReader(pdf_file)
-    text = ""
-    for page in pdf_reader.pages:
-        text += page.extract_text()
+    all_text = ""
+    for pdf_file in pdf_files:
+        pdf_reader = PyPDF2.PdfReader(pdf_file)
+        for page in pdf_reader.pages:
+            all_text += page.extract_text() + "\n\n"
     end_time = time.time()
     st.text(f"PDF text extraction completed in {end_time - start_time:.2f} seconds")
-    return text
+    return all_text
+
 
 def process_report(report_text):
     st.text("Processing report...")
@@ -100,16 +104,20 @@ def process_report(report_text):
     csv_output = claude_request(prompt)
     return csv_output
 
-def upload_to_firebase(patient_name, contact_number, email, pdf_file, csv_data):
+
+def upload_to_firebase(patient_name, contact_number, email, pdf_files, csv_data):
     st.text("Uploading to Firebase...")
     try:
-        # Reset the PDF file pointer to the beginning
-        pdf_file.seek(0)
-        
-        # Upload PDF to Firebase Storage
-        pdf_file_name = f"{patient_name}_report.pdf"
-        pdf_blob = bucket.blob(pdf_file_name)
-        pdf_blob.upload_from_file(pdf_file)
+        pdf_file_names = []
+        for i, pdf_file in enumerate(pdf_files):
+            # Reset the PDF file pointer to the beginning
+            pdf_file.seek(0)
+
+            # Upload PDF to Firebase Storage
+            pdf_file_name = f"{patient_name}_report_{i+1}.pdf"
+            pdf_blob = bucket.blob(pdf_file_name)
+            pdf_blob.upload_from_file(pdf_file)
+            pdf_file_names.append(pdf_file_name)
 
         # Upload CSV data as a string
         csv_file_name = f"{patient_name}_data.csv"
@@ -123,14 +131,15 @@ def upload_to_firebase(patient_name, contact_number, email, pdf_file, csv_data):
             'contact_number': contact_number,
             'email': email,
             'upload_date': datetime.now(),
-            'pdf_file_name': pdf_file_name,
+            'pdf_file_names': pdf_file_names,
             'csv_file_name': csv_file_name
         })
 
-        st.success(f"Uploaded PDF and CSV for {patient_name} to Firebase successfully!")
+        st.success(f"Uploaded {len(pdf_files)} PDFs and CSV for {patient_name} to Firebase successfully!")
     except Exception as e:
         st.error(f"Error uploading to Firebase: {str(e)}")
         st.error(f"Error details: {type(e).__name__}, {str(e)}")
+
 
 def main():
     st.title("Dr. Om J Lakhani Report Uploader")
@@ -141,25 +150,26 @@ def main():
     email = st.text_input("Email address")
 
     # File uploader
-    uploaded_file = st.file_uploader("Upload PDF of Report", type=["pdf"])
+    uploaded_files = st.file_uploader("Upload PDF(s) of Report", type=["pdf"], accept_multiple_files=True)
 
     if st.button("Submit"):
-        if uploaded_file and patient_name and contact_number and email:
+        if uploaded_files and patient_name and contact_number and email:
             try:
-                # Process the uploaded file
-                report_text = extract_text_from_pdf(uploaded_file)
+                # Process the uploaded files
+                report_text = extract_text_from_pdfs(uploaded_files)
                 csv_output = process_report(report_text)
-                
+
                 # Upload to Firebase
-                upload_to_firebase(patient_name, contact_number, email, uploaded_file, csv_output)
-                
+                upload_to_firebase(patient_name, contact_number, email, uploaded_files, csv_output)
+
                 # Display the CSV output (optional, for debugging)
                 # st.text("Generated CSV data:")
                 # st.text(csv_output)
             except Exception as e:
                 st.error(f"An error occurred: {str(e)}")
         else:
-            st.warning("Please fill in all fields and upload a file.")
+            st.warning("Please fill in all fields and upload at least one file.")
+
 
 if __name__ == "__main__":
     main()
